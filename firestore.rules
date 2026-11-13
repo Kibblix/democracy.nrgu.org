@@ -1,1 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
 
+    match /votes/totals {
+      allow read: if true;
+      allow update: if request.auth != null
+        && !exists(/databases/$(database)/documents/voters/$(request.auth.uid))
+        && existsAfter(/databases/$(database)/documents/voters/$(request.auth.uid))
+        && (
+          (request.resource.data.forVotes == resource.data.forVotes + 1
+            && request.resource.data.againstVotes == resource.data.againstVotes)
+          ||
+          (request.resource.data.againstVotes == resource.data.againstVotes + 1
+            && request.resource.data.forVotes == resource.data.forVotes)
+        );
+    }
+
+    match /voters/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.choice in ['for', 'against'];
+    }
+  }
+}
