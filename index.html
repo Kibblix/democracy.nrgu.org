@@ -1,9 +1,285 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Polls and stuff</title>
-  </head>
-  <body>
-    <h1>Polls and stuff</h1>
-  </body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vote</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 20px;
+            font-family: Arial, sans-serif;
+            background: #0a0a0a;
+            color: #ddd;
+            text-align: center;
+        }
+
+        #back {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 8px 14px;
+            font-size: 14px;
+            background: transparent;
+            color: #ddd;
+            border: 1px solid #555;
+            cursor: pointer;
+        }
+
+        #back:hover { background: #222; }
+
+        main {
+            max-width: 500px;
+            margin: 120px auto 0;
+        }
+
+        h1 {
+            font-family: "Creepster", Impact, sans-serif;
+            font-size: 96px;
+            font-weight: normal;
+            letter-spacing: 6px;
+            margin: 0 0 30px;
+            color: #c00000;
+            text-shadow: 0 0 10px #ff0000, 0 0 30px #8b0000;
+            animation: flicker 3s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 18%, 22%, 62%, 64%, 100% { opacity: 1; }
+            20%, 63% { opacity: 0.4; }
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .buttons button {
+            padding: 14px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            background: #1a1a1a;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+
+        #forBtn { border: 2px solid #1e6bff; }
+        #againstBtn { border: 2px solid #c00000; }
+
+        #forBtn:hover:not(:disabled) {
+            background: #1e6bff;
+            box-shadow: 0 0 15px #1e6bff;
+        }
+
+        #againstBtn:hover:not(:disabled) {
+            background: #c00000;
+            box-shadow: 0 0 15px #ff0000;
+        }
+
+        .buttons button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 20px;
+            min-height: 24px;
+            color: #ff4d4d;
+        }
+
+        /* Results bar */
+        #bar {
+            display: flex;
+            height: 44px;
+            margin-top: 30px;
+            border: 1px solid #333;
+            overflow: hidden;
+            background: #222;
+        }
+
+        #barFor, #barAgainst {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 15px;
+            color: white;
+            width: 50%;
+            transition: width 0.6s ease;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        #barFor { background: #1e6bff; }
+        #barAgainst { background: #c00000; }
+
+        #total {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #888;
+        }
+
+        small {
+            display: block;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #888;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="back" onclick="goBack()">← Back</button>
+
+    <main>
+        <h1>VOTE</h1>
+
+        <div class="buttons">
+            <button id="forBtn" disabled>For</button>
+            <button id="againstBtn" disabled>Against</button>
+        </div>
+
+        <div id="result">Loading...</div>
+
+        <div id="bar">
+            <div id="barFor">50%</div>
+            <div id="barAgainst">50%</div>
+        </div>
+        <div id="total"></div>
+
+        <small>
+            Cast your vote carefully. You may only vote once, and your choice
+            cannot be changed afterwards. Replace this text with whatever
+            you'd like to explain about the vote.
+        </small>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged }
+            from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, onSnapshot, writeBatch, increment }
+            from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // 👇 Paste your own config from the Firebase console
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const forBtn = document.getElementById("forBtn");
+        const againstBtn = document.getElementById("againstBtn");
+        const result = document.getElementById("result");
+        const barFor = document.getElementById("barFor");
+        const barAgainst = document.getElementById("barAgainst");
+        const totalEl = document.getElementById("total");
+
+        const LOCAL_KEY = "hasVoted";
+        let uid = null;
+
+        window.goBack = function () {
+            if (history.length > 1) {
+                history.back();
+            } else {
+                window.location.href = "index.html"; // change to your gallery page
+            }
+        };
+
+        function lockButtons(choice) {
+            forBtn.disabled = true;
+            againstBtn.disabled = true;
+            result.textContent = choice
+                ? `You voted ${choice === "for" ? "For" : "Against"}.`
+                : "You have already voted.";
+        }
+
+        function updateBar(forVotes, againstVotes) {
+            const total = forVotes + againstVotes;
+            const forPct = total ? (forVotes / total) * 100 : 50;
+            const againstPct = total ? 100 - forPct : 50;
+
+            barFor.style.width = forPct + "%";
+            barAgainst.style.width = againstPct + "%";
+            barFor.textContent = total ? forPct.toFixed(1) + "%" : "0%";
+            barAgainst.textContent = total ? againstPct.toFixed(1) + "%" : "0%";
+            totalEl.textContent = `${total} vote${total === 1 ? "" : "s"}`;
+        }
+
+        // Live results for everyone
+        onSnapshot(doc(db, "votes", "totals"), snap => {
+            const d = snap.data() || {};
+            updateBar(d.forVotes || 0, d.againstVotes || 0);
+        }, () => {
+            result.textContent = "Couldn't load results.";
+        });
+
+        async function vote(choice) {
+            if (!uid || localStorage.getItem(LOCAL_KEY)) return;
+
+            forBtn.disabled = true;
+            againstBtn.disabled = true;
+            result.textContent = "Submitting...";
+
+            try {
+                const batch = writeBatch(db);
+                batch.set(doc(db, "voters", uid), {
+                    choice,
+                    at: Date.now()
+                });
+                batch.update(doc(db, "votes", "totals"), {
+                    [choice === "for" ? "forVotes" : "againstVotes"]: increment(1)
+                });
+                await batch.commit();
+
+                localStorage.setItem(LOCAL_KEY, choice);
+                lockButtons(choice);
+            } catch (err) {
+                console.error(err);
+                result.textContent = "Vote failed (you may have already voted).";
+            }
+        }
+
+        forBtn.onclick = () => vote("for");
+        againstBtn.onclick = () => vote("against");
+
+        // Sign in anonymously, then check if this browser already voted
+        onAuthStateChanged(auth, async user => {
+            if (!user) {
+                try { await signInAnonymously(auth); }
+                catch (e) { result.textContent = "Couldn't connect."; }
+                return;
+            }
+
+            uid = user.uid;
+
+            const localVote = localStorage.getItem(LOCAL_KEY);
+            if (localVote) return lockButtons(localVote);
+
+            try {
+                const snap = await getDoc(doc(db, "voters", uid));
+                if (snap.exists()) {
+                    localStorage.setItem(LOCAL_KEY, snap.data().choice);
+                    return lockButtons(snap.data().choice);
+                }
+            } catch (e) { /* ignore, treat as not voted */ }
+
+            result.textContent = "";
+            forBtn.disabled = false;
+            againstBtn.disabled = false;
+        });
+    </script>
+
+</body>
 </html>
