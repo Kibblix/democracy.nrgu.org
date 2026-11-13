@@ -11,7 +11,7 @@
             --red: #e03131;
             --text: #222;
             --muted: #888;
-            --line: #e5e5e5;
+            --line: #ececec;
         }
 
         * { box-sizing: border-box; }
@@ -31,17 +31,15 @@
             left: 20px;
             padding: 6px 0;
             font-size: 14px;
-            background: none;
-            border: none;
             color: var(--muted);
-            cursor: pointer;
+            text-decoration: none;
         }
 
         #back:hover { color: var(--text); }
 
         main {
-            max-width: 460px;
-            margin: 120px auto 0;
+            max-width: 860px;
+            margin: 100px auto 40px;
         }
 
         h1 {
@@ -54,9 +52,27 @@
         h1 .against { color: var(--red); }
 
         .subtitle {
-            margin: 0 0 36px;
+            margin: 0 0 48px;
             font-size: 14px;
             color: var(--muted);
+        }
+
+        #stations {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .station {
+            padding: 28px 24px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+        }
+
+        .station h2 {
+            margin: 0 0 20px;
+            font-size: 26px;
+            font-weight: 600;
         }
 
         .buttons {
@@ -67,58 +83,78 @@
 
         .buttons button {
             flex: 1;
-            max-width: 180px;
-            padding: 12px 0;
-            font-size: 16px;
+            max-width: 150px;
+            padding: 11px 0;
+            font-size: 15px;
             font-weight: 600;
             background: white;
+            border-radius: 999px;
             cursor: pointer;
             transition: background 0.15s, color 0.15s;
         }
 
-        #forBtn { color: var(--blue); border: 2px solid var(--blue); }
-        #againstBtn { color: var(--red); border: 2px solid var(--red); }
+        .for-btn { color: var(--blue); border: 2px solid var(--blue); }
+        .against-btn { color: var(--red); border: 2px solid var(--red); }
 
-        #forBtn:hover:not(:disabled) { background: var(--blue); color: white; }
-        #againstBtn:hover:not(:disabled) { background: var(--red); color: white; }
+        .for-btn:hover:not(:disabled) { background: var(--blue); color: white; }
+        .against-btn:hover:not(:disabled) { background: var(--red); color: white; }
 
         .buttons button:disabled {
             opacity: 0.35;
             cursor: not-allowed;
         }
 
-        #result {
-            margin-top: 16px;
+        .result {
+            margin-top: 14px;
             min-height: 22px;
             font-size: 14px;
             color: var(--muted);
         }
 
-        #bar {
+        .remove-btn {
+            display: none;
+            margin: 2px auto 0;
+            padding: 4px 8px;
+            font-size: 13px;
+            color: var(--muted);
+            background: none;
+            border: none;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .remove-btn:hover:not(:disabled) { color: var(--text); }
+        .remove-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .bar {
             display: flex;
-            height: 36px;
-            margin-top: 24px;
+            height: 34px;
+            margin-top: 20px;
+            padding: 3px;
             background: var(--line);
+            border-radius: 999px;
             overflow: hidden;
         }
 
-        #barFor, #barAgainst {
+        .bar-for, .bar-against {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 50%;
-            font-size: 14px;
+            flex: 1 1 0;
+            min-width: 0;
+            font-size: 13px;
             font-weight: 600;
             color: white;
             white-space: nowrap;
             overflow: hidden;
-            transition: width 0.5s ease;
+            border-radius: 999px;
+            transition: flex-grow 0.5s ease, margin 0.5s ease;
         }
 
-        #barFor { background: var(--blue); }
-        #barAgainst { background: var(--red); }
+        .bar-for { background: var(--blue); }
+        .bar-against { background: var(--red); }
 
-        #total {
+        .total {
             margin-top: 8px;
             font-size: 12px;
             color: var(--muted);
@@ -135,27 +171,16 @@
 </head>
 <body>
 
-    <a href="https://nrgu.org" id="back" class="back-btn">← Back</a>
+    <a href="https://nrgu.org" id="back">← Back</a>
 
     <main>
         <h1><span class="for">For</span> or <span class="against">Against</span>?</h1>
         <p class="subtitle">Vote for the current student council</p>
 
-        <div class="buttons">
-            <button id="forBtn" disabled>For</button>
-            <button id="againstBtn" disabled>Against</button>
-        </div>
-
-        <div id="result">Loading...</div>
-
-        <div id="bar">
-            <div id="barFor">50%</div>
-            <div id="barAgainst">50%</div>
-        </div>
-        <div id="total"></div>
+        <div id="stations"></div>
 
         <small>
-            You may only vote once, and your choice cannot be changed afterwards.
+            You get one vote per person. You can remove it at any time and vote again.
         </small>
     </main>
 
@@ -180,101 +205,155 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        const forBtn = document.getElementById("forBtn");
-        const againstBtn = document.getElementById("againstBtn");
-        const result = document.getElementById("result");
-        const barFor = document.getElementById("barFor");
-        const barAgainst = document.getElementById("barAgainst");
-        const totalEl = document.getElementById("total");
+        // Add or rename stations here. The id must match the Firestore document name and the rules.
+        const CANDIDATES = [
+            { id: "hamza", name: "Hamza" },
+            { id: "clara", name: "Clara" }
+        ];
 
-        const LOCAL_KEY = "hasVoted";
-        let uid = null;
+        const stationsEl = document.getElementById("stations");
+        const field = choice => (choice === "for" ? "forVotes" : "againstVotes");
 
-        window.goBack = function () {
-            window.location.href = "https://gallery.nrgu.org";
-        };
+        function createStation({ id, name }) {
+            const el = document.createElement("section");
+            el.className = "station";
+            el.innerHTML = `
+                <h2></h2>
+                <div class="buttons">
+                    <button class="for-btn" disabled>For</button>
+                    <button class="against-btn" disabled>Against</button>
+                </div>
+                <div class="result">Loading...</div>
+                <button class="remove-btn">Remove my vote</button>
+                <div class="bar">
+                    <div class="bar-for">50%</div>
+                    <div class="bar-against">50%</div>
+                </div>
+                <div class="total"></div>
+            `;
+            el.querySelector("h2").textContent = name;
+            stationsEl.appendChild(el);
 
-        function lockButtons(choice) {
-            forBtn.disabled = true;
-            againstBtn.disabled = true;
-            result.textContent = choice
-                ? `You voted ${choice === "for" ? "For" : "Against"}.`
-                : "You have already voted.";
-        }
+            const forBtn = el.querySelector(".for-btn");
+            const againstBtn = el.querySelector(".against-btn");
+            const removeBtn = el.querySelector(".remove-btn");
+            const result = el.querySelector(".result");
+            const barFor = el.querySelector(".bar-for");
+            const barAgainst = el.querySelector(".bar-against");
+            const totalEl = el.querySelector(".total");
 
-        function updateBar(forVotes, againstVotes) {
-            const total = forVotes + againstVotes;
-            const forPct = total ? (forVotes / total) * 100 : 50;
-            const againstPct = total ? 100 - forPct : 50;
+            const totalsRef = doc(db, "votes", id);
+            let uid = null;
+            let currentChoice = null;
 
-            barFor.style.width = forPct + "%";
-            barAgainst.style.width = againstPct + "%";
-            barFor.textContent = total ? forPct.toFixed(1) + "%" : "0%";
-            barAgainst.textContent = total ? againstPct.toFixed(1) + "%" : "0%";
-            totalEl.textContent = `${total} vote${total === 1 ? "" : "s"}`;
-        }
+            const voterRef = () => doc(db, "voters", `${id}_${uid}`);
 
-        // Live results for everyone
-        onSnapshot(doc(db, "votes", "totals"), snap => {
-            const d = snap.data() || {};
-            updateBar(d.forVotes || 0, d.againstVotes || 0);
-        }, () => {
-            result.textContent = "Couldn't load results.";
-        });
-
-        async function vote(choice) {
-            if (!uid || localStorage.getItem(LOCAL_KEY)) return;
-
-            forBtn.disabled = true;
-            againstBtn.disabled = true;
-            result.textContent = "Submitting...";
-
-            try {
-                const batch = writeBatch(db);
-                batch.set(doc(db, "voters", uid), {
-                    choice,
-                    at: Date.now()
-                });
-                batch.update(doc(db, "votes", "totals"), {
-                    [choice === "for" ? "forVotes" : "againstVotes"]: increment(1)
-                });
-                await batch.commit();
-
-                localStorage.setItem(LOCAL_KEY, choice);
-                lockButtons(choice);
-            } catch (err) {
-                console.error(err);
-                result.textContent = "Vote failed (you may have already voted).";
+            function showVoted(choice) {
+                currentChoice = choice;
+                forBtn.disabled = true;
+                againstBtn.disabled = true;
+                removeBtn.disabled = false;
+                removeBtn.style.display = "block";
+                result.textContent = `You voted ${choice === "for" ? "For" : "Against"}.`;
             }
+
+            function showCanVote() {
+                currentChoice = null;
+                forBtn.disabled = false;
+                againstBtn.disabled = false;
+                removeBtn.style.display = "none";
+                result.textContent = "";
+            }
+
+            function updateBar(forVotes, againstVotes) {
+                const total = forVotes + againstVotes;
+                const forPct = total ? (forVotes / total) * 100 : 50;
+                const againstPct = total ? 100 - forPct : 50;
+
+                barFor.style.flexGrow = forPct;
+                barAgainst.style.flexGrow = againstPct;
+                barAgainst.style.marginLeft = forPct > 0 && againstPct > 0 ? "3px" : "0";
+
+                barFor.textContent = total ? Math.round(forPct) + "%" : "0%";
+                barAgainst.textContent = total ? Math.round(againstPct) + "%" : "0%";
+                totalEl.textContent = `${total} vote${total === 1 ? "" : "s"}`;
+            }
+
+            // Live results for everyone
+            onSnapshot(totalsRef, snap => {
+                const d = snap.data() || {};
+                updateBar(d.forVotes || 0, d.againstVotes || 0);
+            }, () => {
+                result.textContent = "Couldn't load results.";
+            });
+
+            async function vote(choice) {
+                if (!uid || currentChoice) return;
+
+                forBtn.disabled = true;
+                againstBtn.disabled = true;
+                result.textContent = "Submitting...";
+
+                try {
+                    const batch = writeBatch(db);
+                    batch.set(voterRef(), { choice, at: Date.now() });
+                    batch.update(totalsRef, { [field(choice)]: increment(1) });
+                    await batch.commit();
+                    showVoted(choice);
+                } catch (err) {
+                    console.error(err);
+                    showCanVote();
+                    result.textContent = "Vote failed. Please try again.";
+                }
+            }
+
+            async function removeVote() {
+                if (!uid || !currentChoice) return;
+
+                const choice = currentChoice;
+                removeBtn.disabled = true;
+                result.textContent = "Removing...";
+
+                try {
+                    const batch = writeBatch(db);
+                    batch.delete(voterRef());
+                    batch.update(totalsRef, { [field(choice)]: increment(-1) });
+                    await batch.commit();
+                    showCanVote();
+                } catch (err) {
+                    console.error(err);
+                    showVoted(choice);
+                    result.textContent = "Couldn't remove your vote. Please try again.";
+                }
+            }
+
+            forBtn.onclick = () => vote("for");
+            againstBtn.onclick = () => vote("against");
+            removeBtn.onclick = removeVote;
+
+            // Called once we have an anonymous user
+            return {
+                async init(userId) {
+                    uid = userId;
+                    try {
+                        const snap = await getDoc(voterRef());
+                        if (snap.exists()) return showVoted(snap.data().choice);
+                    } catch (e) { /* treat as not voted */ }
+                    showCanVote();
+                },
+                fail(msg) { result.textContent = msg; }
+            };
         }
 
-        forBtn.onclick = () => vote("for");
-        againstBtn.onclick = () => vote("against");
+        const stations = CANDIDATES.map(createStation);
 
-        // Sign in anonymously, then check if this browser already voted
         onAuthStateChanged(auth, async user => {
             if (!user) {
                 try { await signInAnonymously(auth); }
-                catch (e) { result.textContent = "Couldn't connect."; }
+                catch (e) { stations.forEach(s => s.fail("Couldn't connect.")); }
                 return;
             }
-
-            uid = user.uid;
-
-            const localVote = localStorage.getItem(LOCAL_KEY);
-            if (localVote) return lockButtons(localVote);
-
-            try {
-                const snap = await getDoc(doc(db, "voters", uid));
-                if (snap.exists()) {
-                    localStorage.setItem(LOCAL_KEY, snap.data().choice);
-                    return lockButtons(snap.data().choice);
-                }
-            } catch (e) { /* ignore, treat as not voted */ }
-
-            result.textContent = "";
-            forBtn.disabled = false;
-            againstBtn.disabled = false;
+            stations.forEach(s => s.init(user.uid));
         });
     </script>
 
