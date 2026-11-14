@@ -176,7 +176,11 @@
     <main>
         <h1><span class="for">For</span> or <span class="against">Against</span>?</h1>
         <p class="subtitle">Vote for the current elevråd</p>
-
+        <div id="auth" style="margin-bottom:28px">
+            <button id="login" style="padding:10px 22px;font-size:15px;font-weight:600;border-radius:999px;border:1px solid #ddd;background:white;cursor:pointer">Sign in with Google</button>
+            <span id="who" style="display:none;font-size:14px;color:#888"></span>
+            <button id="logout" style="display:none;margin-left:8px;border:none;background:none;text-decoration:underline;color:#888;cursor:pointer">Sign out</button>
+        </div>
         <div id="stations"></div>
 
         <small>
@@ -186,7 +190,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged }
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, doc, getDoc, onSnapshot, writeBatch, increment }
             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
