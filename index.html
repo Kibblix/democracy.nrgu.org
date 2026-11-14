@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vote</title>
- 
+    <title>Democracy</title>
+
     <style>
         :root {
             --blue: #1e6bff;
@@ -14,9 +13,9 @@
             --muted: #888;
             --line: #ececec;
         }
- 
+
         * { box-sizing: border-box; }
- 
+
         body {
             margin: 0;
             padding: 20px;
@@ -25,7 +24,7 @@
             color: var(--text);
             text-align: center;
         }
- 
+
         #back {
             position: absolute;
             top: 20px;
@@ -35,35 +34,35 @@
             color: var(--muted);
             text-decoration: none;
         }
- 
+
         #back:hover { color: var(--text); }
- 
-        main {
-            max-width: 860px;
-            margin: 100px auto 40px;
-        }
- 
-        h1 {
-            font-size: 44px;
-            font-weight: 600;
-            margin: 0 0 10px;
-        }
- 
-        h1 .for { color: var(--blue); }
-        h1 .against { color: var(--red); }
- 
-        .subtitle {
-            margin: 0 0 32px;
+
+        #auth {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             font-size: 14px;
+        }
+
+        #who {
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
             color: var(--muted);
         }
- 
-        #auth {
-            margin-bottom: 28px;
-            min-height: 42px;
+
+        #acct {
+            color: var(--muted);
+            text-decoration: none;
         }
- 
-        #login {
+
+        #acct:hover { color: var(--text); }
+
+        .pill {
             padding: 10px 22px;
             font-size: 15px;
             font-weight: 600;
@@ -74,52 +73,107 @@
             cursor: pointer;
             transition: background 0.15s;
         }
- 
-        #login:hover { background: #f6f6f6; }
- 
-        #who {
-            display: none;
+
+        .pill:hover:not(:disabled) { background: #f6f6f6; }
+        .pill:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        #auth .pill {
+            padding: 7px 16px;
+            font-size: 14px;
+        }
+
+        main {
+            max-width: 640px;
+            margin: 100px auto 40px;
+        }
+
+        h1 {
+            font-size: 44px;
+            font-weight: 600;
+            margin: 0 0 10px;
+        }
+
+        h1 .yes { color: var(--blue); }
+        h1 .no { color: var(--red); }
+
+        .subtitle {
+            margin: 0 0 32px;
             font-size: 14px;
             color: var(--muted);
         }
- 
-        #logout {
-            display: none;
-            margin-left: 8px;
-            border: none;
-            background: none;
+
+        #notice {
+            min-height: 20px;
+            margin: -16px 0 16px;
             font-size: 14px;
-            text-decoration: underline;
-            color: var(--muted);
-            cursor: pointer;
+            color: var(--red);
         }
- 
-        #logout:hover { color: var(--text); }
- 
-        #stations {
+
+        #create {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+        }
+
+        #question {
+            flex: 1 1 260px;
+            min-width: 0;
+            padding: 12px 16px;
+            font: inherit;
+            font-size: 16px;
+            color: var(--text);
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 14px;
+            outline: none;
+        }
+
+        #question:focus { border-color: var(--blue); }
+        #question:disabled { background: #fafafa; }
+
+        #createMsg {
+            flex: 1 1 100%;
+            min-height: 18px;
+            font-size: 13px;
+            color: var(--muted);
+            text-align: left;
+        }
+
+        #polls {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 24px;
+            margin-top: 32px;
         }
- 
-        .station {
+
+        .poll {
             padding: 28px 24px;
             border: 1px solid var(--line);
             border-radius: 20px;
         }
- 
-        .station h2 {
-            margin: 0 0 20px;
-            font-size: 26px;
+
+        .question {
+            margin: 0 0 6px;
+            font-size: 22px;
             font-weight: 600;
+            line-height: 1.3;
+            word-break: break-word;
         }
- 
+
+        .by {
+            margin: 0 0 20px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
         .buttons {
             display: flex;
             justify-content: center;
             gap: 12px;
         }
- 
+
         .buttons button {
             flex: 1;
             max-width: 150px;
@@ -131,27 +185,26 @@
             cursor: pointer;
             transition: background 0.15s, color 0.15s;
         }
- 
-        .for-btn { color: var(--blue); border: 2px solid var(--blue); }
-        .against-btn { color: var(--red); border: 2px solid var(--red); }
- 
-        .for-btn:hover:not(:disabled) { background: var(--blue); color: white; }
-        .against-btn:hover:not(:disabled) { background: var(--red); color: white; }
- 
+
+        .yes-btn { color: var(--blue); border: 2px solid var(--blue); }
+        .no-btn { color: var(--red); border: 2px solid var(--red); }
+
+        .yes-btn:hover:not(:disabled) { background: var(--blue); color: white; }
+        .no-btn:hover:not(:disabled) { background: var(--red); color: white; }
+
         .buttons button:disabled {
             opacity: 0.35;
             cursor: not-allowed;
         }
- 
+
         .result {
             margin-top: 14px;
             min-height: 22px;
             font-size: 14px;
             color: var(--muted);
         }
- 
-        .remove-btn {
-            display: none;
+
+        .link-btn {
             margin: 2px auto 0;
             padding: 4px 8px;
             font-size: 13px;
@@ -161,10 +214,13 @@
             text-decoration: underline;
             cursor: pointer;
         }
- 
-        .remove-btn:hover:not(:disabled) { color: var(--text); }
-        .remove-btn:disabled { opacity: 0.5; cursor: not-allowed; }
- 
+
+        .link-btn:hover:not(:disabled) { color: var(--text); }
+        .link-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .delete-btn { color: var(--red); }
+        .delete-btn:hover:not(:disabled) { color: var(--red); opacity: 0.8; }
+
         .bar {
             display: flex;
             height: 34px;
@@ -174,8 +230,8 @@
             border-radius: 999px;
             overflow: hidden;
         }
- 
-        .bar-for, .bar-against {
+
+        .bar-yes, .bar-no {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -189,16 +245,22 @@
             border-radius: 999px;
             transition: flex-grow 0.5s ease, margin 0.5s ease;
         }
- 
-        .bar-for { background: var(--blue); }
-        .bar-against { background: var(--red); }
- 
+
+        .bar-yes { background: var(--blue); }
+        .bar-no { background: var(--red); }
+
         .total {
-            margin-top: 8px;
+            margin: 8px 0 6px;
             font-size: 12px;
             color: var(--muted);
         }
- 
+
+        #empty, #more {
+            margin-top: 32px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
         small {
             display: block;
             margin-top: 36px;
@@ -206,36 +268,58 @@
             color: var(--muted);
             line-height: 1.5;
         }
+
+        [hidden] { display: none !important; }
+
+        @media (max-width: 520px) {
+            #who, #acct { display: none; }
+            h1 { font-size: 36px; }
+        }
     </style>
 </head>
 <body>
- 
+
     <a href="https://nrgu.org" id="back">← Back</a>
- 
+
+    <div id="auth">
+        <button id="login" class="pill" hidden>Sign in with Google</button>
+        <span id="who" hidden></span>
+        <a id="acct" href="https://account.nrgu.org" hidden>Account</a>
+        <button id="logout" class="pill" hidden>Sign out</button>
+    </div>
+
     <main>
-        <h1><span class="for">For</span> or <span class="against">Against</span>?</h1>
-        <p class="subtitle">Vote for the current elevråd</p>
- 
-        <div id="auth">
-            <button id="login">Sign in with Google</button>
-            <span id="who"></span>
-            <button id="logout">Sign out</button>
-        </div>
- 
-        <div id="stations"></div>
- 
+        <h1><span class="yes">Yes</span> or <span class="no">No</span>?</h1>
+        <p class="subtitle">Ask a yes or no question and let people vote</p>
+
+        <div id="notice"></div>
+
+        <form id="create">
+            <input id="question" type="text" maxlength="200" autocomplete="off"
+                   placeholder="Sign in to ask a question" disabled>
+            <button id="createBtn" class="pill" type="submit" disabled>Create poll</button>
+            <div id="createMsg"></div>
+        </form>
+
+        <div id="polls"></div>
+        <div id="empty" hidden>No polls yet. Be the first to create one.</div>
+        <button id="more" class="link-btn" hidden>Show more</button>
+
         <small>
-            Sign in with Google to vote. You get one vote per person. You can remove it at any time and vote again.
+            Sign in with Google to vote or create polls. You get one vote per poll and can remove it at any time.
+            You can delete the polls you create.
         </small>
     </main>
- 
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, getDoc, onSnapshot, writeBatch, increment }
-            from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
- 
+        import {
+            getFirestore, collection, doc, getDoc, addDoc, deleteDoc, onSnapshot,
+            query, orderBy, limit, writeBatch, increment, serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyAIPtFw3b-BMaz6hpZfGOrm3Y_WGIG6d34",
             authDomain: "my-base-6f65f.firebaseapp.com",
@@ -245,196 +329,344 @@
             appId: "1:1032034958108:web:baab1635dfb0e41ad758d9",
             measurementId: "G-X9Z61B7GKV"
         };
- 
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
- 
-        // Add or rename stations here. The id must match the Firestore document name and the rules.
-        const CANDIDATES = [
-            { id: "hamza", name: "Hamza" },
-            { id: "clara", name: "Clara" }
-        ];
- 
-        const stationsEl = document.getElementById("stations");
-        const field = choice => (choice === "for" ? "forVotes" : "againstVotes");
- 
-        function createStation({ id, name }) {
+
+        const $ = id => document.getElementById(id);
+        const pollsEl = $("polls");
+        const emptyEl = $("empty");
+        const moreBtn = $("more");
+        const noticeEl = $("notice");
+        const loginBtn = $("login");
+        const logoutBtn = $("logout");
+        const whoEl = $("who");
+        const acctEl = $("acct");
+        const questionInput = $("question");
+        const createBtn = $("createBtn");
+        const createMsg = $("createMsg");
+
+        const PAGE_SIZE = 20;
+
+        let user = null;
+        let isAdmin = false;
+        let pageSize = PAGE_SIZE;
+        let unsubscribe = null;
+        const cards = new Map();
+
+        // ---------- A single poll card ----------
+
+        function createCard(id) {
             const el = document.createElement("section");
-            el.className = "station";
+            el.className = "poll";
             el.innerHTML = `
-                <h2></h2>
+                <h2 class="question"></h2>
+                <div class="by"></div>
                 <div class="buttons">
-                    <button class="for-btn" disabled>For</button>
-                    <button class="against-btn" disabled>Against</button>
+                    <button class="yes-btn" disabled>Yes</button>
+                    <button class="no-btn" disabled>No</button>
                 </div>
-                <div class="result">Loading...</div>
-                <button class="remove-btn">Remove my vote</button>
+                <div class="result"></div>
+                <button class="link-btn remove-btn" hidden>Remove my vote</button>
                 <div class="bar">
-                    <div class="bar-for">50%</div>
-                    <div class="bar-against">50%</div>
+                    <div class="bar-yes">50%</div>
+                    <div class="bar-no">50%</div>
                 </div>
                 <div class="total"></div>
+                <button class="link-btn delete-btn" hidden>Delete poll</button>
             `;
-            el.querySelector("h2").textContent = name;
-            stationsEl.appendChild(el);
- 
-            const forBtn = el.querySelector(".for-btn");
-            const againstBtn = el.querySelector(".against-btn");
+
+            const questionEl = el.querySelector(".question");
+            const byEl = el.querySelector(".by");
+            const yesBtn = el.querySelector(".yes-btn");
+            const noBtn = el.querySelector(".no-btn");
+            const resultEl = el.querySelector(".result");
             const removeBtn = el.querySelector(".remove-btn");
-            const result = el.querySelector(".result");
-            const barFor = el.querySelector(".bar-for");
-            const barAgainst = el.querySelector(".bar-against");
+            const barYes = el.querySelector(".bar-yes");
+            const barNo = el.querySelector(".bar-no");
             const totalEl = el.querySelector(".total");
- 
-            const totalsRef = doc(db, "votes", id);
-            let uid = null;
-            let currentChoice = null;
- 
-            // votes/{candidate}/voters/{uid}: one doc per user per candidate
-            const voterRef = () => doc(db, "votes", id, "voters", uid);
- 
-            function showVoted(choice) {
-                currentChoice = choice;
-                forBtn.disabled = true;
-                againstBtn.disabled = true;
-                removeBtn.disabled = false;
-                removeBtn.style.display = "block";
-                result.textContent = `You voted ${choice === "for" ? "For" : "Against"}.`;
-            }
- 
-            function showCanVote() {
-                currentChoice = null;
-                forBtn.disabled = false;
-                againstBtn.disabled = false;
-                removeBtn.style.display = "none";
-                result.textContent = "";
-            }
- 
-            function showSignedOut() {
-                uid = null;
-                currentChoice = null;
-                forBtn.disabled = true;
-                againstBtn.disabled = true;
-                removeBtn.style.display = "none";
-                result.textContent = "Sign in to vote.";
-            }
- 
-            function updateBar(forVotes, againstVotes) {
-                const total = forVotes + againstVotes;
-                const forPct = total ? (forVotes / total) * 100 : 50;
-                const againstPct = total ? 100 - forPct : 50;
- 
-                barFor.style.flexGrow = forPct;
-                barAgainst.style.flexGrow = againstPct;
-                barAgainst.style.marginLeft = forPct > 0 && againstPct > 0 ? "3px" : "0";
- 
-                barFor.textContent = total ? Math.round(forPct) + "%" : "0%";
-                barAgainst.textContent = total ? Math.round(againstPct) + "%" : "0%";
+            const deleteBtn = el.querySelector(".delete-btn");
+
+            const pollRef = doc(db, "polls", id);
+
+            let data = null;
+            let myChoice = null;   // null = no vote, undefined = still loading
+            let busy = false;
+            let note = "";
+
+            function updateBar(yes, no) {
+                const total = yes + no;
+                const yesPct = total ? (yes / total) * 100 : 50;
+                const noPct = total ? 100 - yesPct : 50;
+
+                barYes.style.flexGrow = yesPct;
+                barNo.style.flexGrow = noPct;
+                barNo.style.marginLeft = yesPct > 0 && noPct > 0 ? "3px" : "0";
+
+                barYes.textContent = total ? Math.round(yesPct) + "%" : "0%";
+                barNo.textContent = total ? Math.round(noPct) + "%" : "0%";
                 totalEl.textContent = `${total} vote${total === 1 ? "" : "s"}`;
             }
- 
-            // Live results for everyone (no login needed to view)
-            onSnapshot(totalsRef, snap => {
-                const d = snap.data() || {};
-                updateBar(d.forVotes || 0, d.againstVotes || 0);
-            }, () => {
-                result.textContent = "Couldn't load results.";
-            });
- 
+
+            function refresh() {
+                if (!data) return;
+
+                questionEl.textContent = data.question;
+                byEl.textContent = "by " + (data.creatorName || "Anonymous");
+                updateBar(data.yesVotes || 0, data.noVotes || 0);
+
+                const canVote = !!user && myChoice === null && !busy;
+                yesBtn.disabled = !canVote;
+                noBtn.disabled = !canVote;
+
+                removeBtn.hidden = !(user && myChoice);
+                removeBtn.disabled = busy;
+
+                deleteBtn.hidden = !(user && (isAdmin || data.creatorUid === user.uid));
+                deleteBtn.disabled = busy;
+
+                if (note) resultEl.textContent = note;
+                else if (!user) resultEl.textContent = "Sign in to vote.";
+                else if (myChoice === undefined) resultEl.textContent = "Loading...";
+                else if (myChoice) resultEl.textContent = `You voted ${myChoice === "yes" ? "Yes" : "No"}.`;
+                else resultEl.textContent = "";
+            }
+
+            async function loadMyChoice() {
+                note = "";
+                if (!user) {
+                    myChoice = null;
+                    refresh();
+                    return;
+                }
+
+                const uid = user.uid;
+                myChoice = undefined;
+                refresh();
+
+                try {
+                    const snap = await getDoc(doc(db, "polls", id, "voters", uid));
+                    if (!user || user.uid !== uid) return;
+                    myChoice = snap.exists() ? snap.data().choice : null;
+                } catch (e) {
+                    myChoice = null;
+                }
+                refresh();
+            }
+
             async function vote(choice) {
-                if (!uid || currentChoice) return;
- 
-                forBtn.disabled = true;
-                againstBtn.disabled = true;
-                result.textContent = "Submitting...";
- 
+                if (!user || myChoice !== null || busy) return;
+
+                const uid = user.uid;
+                busy = true;
+                note = "Submitting...";
+                refresh();
+
                 try {
                     const batch = writeBatch(db);
-                    batch.set(voterRef(), { choice, at: Date.now() });
-                    batch.update(totalsRef, { [field(choice)]: increment(1) });
+                    batch.set(doc(db, "polls", id, "voters", uid), { choice, at: Date.now() });
+                    batch.update(pollRef, { [choice === "yes" ? "yesVotes" : "noVotes"]: increment(1) });
                     await batch.commit();
-                    showVoted(choice);
+                    myChoice = choice;
+                    note = "";
                 } catch (err) {
                     console.error(err);
-                    showCanVote();
-                    result.textContent = "Vote failed: " + (err.code || err.message);
+                    note = "Vote failed: " + (err.code || err.message);
                 }
+
+                busy = false;
+                refresh();
             }
- 
+
             async function removeVote() {
-                if (!uid || !currentChoice) return;
- 
-                const choice = currentChoice;
-                removeBtn.disabled = true;
-                result.textContent = "Removing...";
- 
+                if (!user || !myChoice || busy) return;
+
+                const uid = user.uid;
+                const choice = myChoice;
+                busy = true;
+                note = "Removing...";
+                refresh();
+
                 try {
                     const batch = writeBatch(db);
-                    batch.delete(voterRef());
-                    batch.update(totalsRef, { [field(choice)]: increment(-1) });
+                    batch.delete(doc(db, "polls", id, "voters", uid));
+                    batch.update(pollRef, { [choice === "yes" ? "yesVotes" : "noVotes"]: increment(-1) });
                     await batch.commit();
-                    showCanVote();
+                    myChoice = null;
+                    note = "";
                 } catch (err) {
                     console.error(err);
-                    showVoted(choice);
-                    result.textContent = "Couldn't remove vote: " + (err.code || err.message);
+                    note = "Couldn't remove vote: " + (err.code || err.message);
+                }
+
+                busy = false;
+                refresh();
+            }
+
+            async function deletePoll() {
+                if (busy) return;
+                if (!confirm("Delete this poll? This can't be undone.")) return;
+
+                busy = true;
+                note = "Deleting...";
+                refresh();
+
+                try {
+                    await deleteDoc(pollRef);   // the live list removes the card
+                } catch (err) {
+                    console.error(err);
+                    busy = false;
+                    note = "Couldn't delete: " + (err.code || err.message);
+                    refresh();
                 }
             }
- 
-            forBtn.onclick = () => vote("for");
-            againstBtn.onclick = () => vote("against");
+
+            yesBtn.onclick = () => vote("yes");
+            noBtn.onclick = () => vote("no");
             removeBtn.onclick = removeVote;
- 
+            deleteBtn.onclick = deletePoll;
+
             return {
-                // Called once the user is signed in with Google
-                async init(userId) {
-                    uid = userId;
-                    result.textContent = "Loading...";
-                    try {
-                        const snap = await getDoc(voterRef());
-                        if (snap.exists()) return showVoted(snap.data().choice);
-                    } catch (e) { /* treat as not voted */ }
-                    showCanVote();
-                },
-                signedOut() { showSignedOut(); },
-                fail(msg) { result.textContent = msg; }
+                el,
+                setData(d) { data = d; refresh(); },
+                refresh,
+                onAuthChange: loadMyChoice
             };
         }
- 
-        const stations = CANDIDATES.map(createStation);
- 
-        // Login UI
-        const loginBtn = document.getElementById("login");
-        const logoutBtn = document.getElementById("logout");
-        const whoEl = document.getElementById("who");
- 
+
+        // ---------- Live list of polls (newest first) ----------
+
+        function subscribe() {
+            if (unsubscribe) unsubscribe();
+
+            const q = query(collection(db, "polls"), orderBy("createdAt", "desc"), limit(pageSize));
+
+            unsubscribe = onSnapshot(q, snap => {
+                const seen = new Set();
+
+                snap.docs.forEach(d => {
+                    seen.add(d.id);
+
+                    let card = cards.get(d.id);
+                    if (!card) {
+                        card = createCard(d.id);
+                        cards.set(d.id, card);
+                        card.setData(d.data());
+                        card.onAuthChange();
+                    } else {
+                        card.setData(d.data());
+                    }
+
+                    pollsEl.appendChild(card.el);   // keeps the DOM in query order
+                });
+
+                for (const [id, card] of cards) {
+                    if (!seen.has(id)) {
+                        card.el.remove();
+                        cards.delete(id);
+                    }
+                }
+
+                emptyEl.hidden = snap.size > 0;
+                moreBtn.hidden = snap.size < pageSize;
+            }, err => {
+                console.error(err);
+                noticeEl.textContent = "Couldn't load polls: " + (err.code || err.message);
+            });
+        }
+
+        moreBtn.onclick = () => {
+            pageSize += PAGE_SIZE;
+            subscribe();
+        };
+
+        // ---------- Create a poll ----------
+
+        $("create").onsubmit = async e => {
+            e.preventDefault();
+            if (!user) return;
+
+            const text = questionInput.value.trim().replace(/\s+/g, " ");
+            if (text.length < 3) {
+                createMsg.textContent = "Write at least 3 characters.";
+                return;
+            }
+
+            createBtn.disabled = true;
+            createMsg.textContent = "Creating...";
+
+            try {
+                await addDoc(collection(db, "polls"), {
+                    question: text,
+                    creatorUid: user.uid,
+                    creatorName: user.displayName || "",
+                    yesVotes: 0,
+                    noVotes: 0,
+                    createdAt: serverTimestamp()
+                });
+                questionInput.value = "";
+                createMsg.textContent = "";
+            } catch (err) {
+                console.error(err);
+                createMsg.textContent = "Couldn't create poll: " + (err.code || err.message);
+            }
+
+            createBtn.disabled = !user;
+        };
+
+        // ---------- Login ----------
+
         loginBtn.onclick = () => {
+            noticeEl.textContent = "";
             signInWithPopup(auth, new GoogleAuthProvider()).catch(err => {
                 console.error(err);
                 if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") {
-                    stations.forEach(s => s.fail("Couldn't sign in: " + (err.code || err.message)));
+                    noticeEl.textContent = "Couldn't sign in: " + (err.code || err.message);
                 }
             });
         };
+
         logoutBtn.onclick = () => signOut(auth);
- 
-        onAuthStateChanged(auth, user => {
-            if (!user) {
-                loginBtn.style.display = "";
-                whoEl.style.display = "none";
-                logoutBtn.style.display = "none";
-                stations.forEach(s => s.signedOut());
-                return;
+
+        function updateAuthUi() {
+            loginBtn.hidden = !!user;
+            logoutBtn.hidden = !user;
+            acctEl.hidden = !user;
+            whoEl.hidden = !user;
+
+            if (user) {
+                const first = String(user.displayName || user.email || "").split(" ")[0];
+                whoEl.textContent = first + (isAdmin ? " (admin)" : "");
             }
-            loginBtn.style.display = "none";
-            whoEl.textContent = user.email;
-            whoEl.style.display = "";
-            logoutBtn.style.display = "";
-            stations.forEach(s => s.init(user.uid));
+
+            questionInput.disabled = !user;
+            createBtn.disabled = !user;
+            questionInput.placeholder = user ? "Ask a yes or no question..." : "Sign in to ask a question";
+        }
+
+        onAuthStateChanged(auth, async u => {
+            user = u;
+            isAdmin = false;
+            updateAuthUi();
+            cards.forEach(c => c.onAuthChange());
+
+            if (!u) return;
+
+            // Only the admin account is allowed to read this document, so a successful read means admin.
+            // The Firestore rules decide who can really delete; this only shows or hides the buttons.
+            try {
+                await getDoc(doc(db, "admin", "check"));
+                if (user && user.uid === u.uid) {
+                    isAdmin = true;
+                    updateAuthUi();
+                    cards.forEach(c => c.refresh());
+                }
+            } catch (e) { /* not an admin */ }
         });
+
+        subscribe();
     </script>
- 
+
 </body>
 </html>
- 
