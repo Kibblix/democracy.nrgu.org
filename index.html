@@ -52,10 +52,48 @@
         h1 .against { color: var(--red); }
 
         .subtitle {
-            margin: 0 0 48px;
+            margin: 0 0 32px;
             font-size: 14px;
             color: var(--muted);
         }
+
+        #auth {
+            margin-bottom: 28px;
+            min-height: 42px;
+        }
+
+        #login {
+            padding: 10px 22px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 999px;
+            border: 1px solid #ddd;
+            background: white;
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        #login:hover { background: #f6f6f6; }
+
+        #who {
+            display: none;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        #logout {
+            display: none;
+            margin-left: 8px;
+            border: none;
+            background: none;
+            font-size: 14px;
+            text-decoration: underline;
+            color: var(--muted);
+            cursor: pointer;
+        }
+
+        #logout:hover { color: var(--text); }
 
         #stations {
             display: grid;
@@ -176,15 +214,17 @@
     <main>
         <h1><span class="for">For</span> or <span class="against">Against</span>?</h1>
         <p class="subtitle">Vote for the current elevråd</p>
-        <div id="auth" style="margin-bottom:28px">
-            <button id="login" style="padding:10px 22px;font-size:15px;font-weight:600;border-radius:999px;border:1px solid #ddd;background:white;cursor:pointer">Sign in with Google</button>
-            <span id="who" style="display:none;font-size:14px;color:#888"></span>
-            <button id="logout" style="display:none;margin-left:8px;border:none;background:none;text-decoration:underline;color:#888;cursor:pointer">Sign out</button>
+
+        <div id="auth">
+            <button id="login">Sign in with Google</button>
+            <span id="who"></span>
+            <button id="logout">Sign out</button>
         </div>
+
         <div id="stations"></div>
 
         <small>
-            You get one vote per person. You can remove it at any time and vote again.
+            Sign in with Google to vote. You get one vote per person. You can remove it at any time and vote again.
         </small>
     </main>
 
@@ -250,7 +290,8 @@
             let uid = null;
             let currentChoice = null;
 
-            const voterRef = () => doc(db, "voters", `${id}_${uid}`);
+            // votes/{candidate}/voters/{uid}: one doc per user per candidate
+            const voterRef = () => doc(db, "votes", id, "voters", uid);
 
             function showVoted(choice) {
                 currentChoice = choice;
@@ -269,6 +310,15 @@
                 result.textContent = "";
             }
 
+            function showSignedOut() {
+                uid = null;
+                currentChoice = null;
+                forBtn.disabled = true;
+                againstBtn.disabled = true;
+                removeBtn.style.display = "none";
+                result.textContent = "Sign in to vote.";
+            }
+
             function updateBar(forVotes, againstVotes) {
                 const total = forVotes + againstVotes;
                 const forPct = total ? (forVotes / total) * 100 : 50;
@@ -283,7 +333,7 @@
                 totalEl.textContent = `${total} vote${total === 1 ? "" : "s"}`;
             }
 
-            // Live results for everyone
+            // Live results for everyone (no login needed to view)
             onSnapshot(totalsRef, snap => {
                 const d = snap.data() || {};
                 updateBar(d.forVotes || 0, d.againstVotes || 0);
@@ -335,28 +385,51 @@
             againstBtn.onclick = () => vote("against");
             removeBtn.onclick = removeVote;
 
-            // Called once we have an anonymous user
             return {
+                // Called once the user is signed in with Google
                 async init(userId) {
                     uid = userId;
+                    result.textContent = "Loading...";
                     try {
                         const snap = await getDoc(voterRef());
                         if (snap.exists()) return showVoted(snap.data().choice);
                     } catch (e) { /* treat as not voted */ }
                     showCanVote();
                 },
+                signedOut() { showSignedOut(); },
                 fail(msg) { result.textContent = msg; }
             };
         }
 
         const stations = CANDIDATES.map(createStation);
 
-        onAuthStateChanged(auth, async user => {
+        // Login UI
+        const loginBtn = document.getElementById("login");
+        const logoutBtn = document.getElementById("logout");
+        const whoEl = document.getElementById("who");
+
+        loginBtn.onclick = () => {
+            signInWithPopup(auth, new GoogleAuthProvider()).catch(err => {
+                console.error(err);
+                if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") {
+                    stations.forEach(s => s.fail("Couldn't sign in. Please try again."));
+                }
+            });
+        };
+        logoutBtn.onclick = () => signOut(auth);
+
+        onAuthStateChanged(auth, user => {
             if (!user) {
-                try { await signInAnonymously(auth); }
-                catch (e) { stations.forEach(s => s.fail("Couldn't connect.")); }
+                loginBtn.style.display = "";
+                whoEl.style.display = "none";
+                logoutBtn.style.display = "none";
+                stations.forEach(s => s.signedOut());
                 return;
             }
+            loginBtn.style.display = "none";
+            whoEl.textContent = user.email;
+            whoEl.style.display = "";
+            logoutBtn.style.display = "";
             stations.forEach(s => s.init(user.uid));
         });
     </script>
